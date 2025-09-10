@@ -1,36 +1,41 @@
+// mainwindow.h
 #pragma once
+
 #include <QtWidgets>
 #include "dualradarwidget.h"
 #include "Targets.h"
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
 
 private slots:
-    void updateArrow();
-    void onLeftRadarToggle(bool checked);
-    void onRightRadarToggle(bool checked);
-    void updateSimulation();
-    void onToggleSimulation();   // слот для меню
+    void updateArrow();                  // Анимация стрелки кругового радара
+    void updateNarrowScan();             // Анимация сканирования секторного радара
+    void updateSimulation();             // Обновление положения целей
+    void onScaleChanged(int value);      // Изменение дальности радаров
+    void onTargetSelected(QListWidgetItem *item); // Пользователь выбрал цель
 
 private:
-    void initializeTargets();
     void setupUI();
-    void setupMenu();            // создаём меню
+    void setupMenu();
+    void initializeTargets();
 
-    RadarWithControls       *leftRadarControls;
-    RadarInstallationWithControls *rightRadarControls;
-    RadarWidget             *leftRadar;
-    RadarInstallationWidget *rightRadar;
+    RadarWidget *circularRadar_;
+    RadarInstallationWidget *sectorRadar_;
+    RadarWithControls *circularControls_;
+    RadarInstallationWithControls *sectorControls_;
 
-    QTimer *animationTimer;
-    QTimer *simulationTimer;
-    QAction *toggleSimAction;   // пункт меню
+    QListWidget *targetList_;            // Список обнаруженных целей
 
-    float arrowAngle;
-    bool simRunning{false};
+    QTimer *arrowTimer_;
+    QTimer *narrowTimer_;
+    QTimer *simTimer_;
+
+    float arrowAngle_{0};
+    float narrowAngle_{90 - 15};        // Начать посередине сектора
+
+    std::shared_ptr<Target> focusedTarget_; // Цель, выбранная для сопровождения
 };
