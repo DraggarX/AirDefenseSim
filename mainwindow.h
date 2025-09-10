@@ -1,10 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
 #pragma once
 #include <QtWidgets>
-#include <QMainWindow>
-#include <QTimer>
 #include "dualradarwidget.h"
 #include "Targets.h"
 
@@ -20,18 +15,22 @@ private slots:
     void onLeftRadarToggle(bool checked);
     void onRightRadarToggle(bool checked);
     void updateSimulation();
+    void onToggleSimulation();   // слот для меню
 
 private:
-    RadarWithControls *leftRadarControls;
-    RadarInstallationWithControls *rightRadarControls;
-    RadarWidget *leftRadar;
-    RadarInstallationWidget *rightRadar;
-    QTimer *animationTimer;
-    QTimer *simulationTimer;
-    float arrowAngle;
-
     void initializeTargets();
     void setupUI();
-};
+    void setupMenu();            // создаём меню
 
-#endif // MAINWINDOW_H
+    RadarWithControls       *leftRadarControls;
+    RadarInstallationWithControls *rightRadarControls;
+    RadarWidget             *leftRadar;
+    RadarInstallationWidget *rightRadar;
+
+    QTimer *animationTimer;
+    QTimer *simulationTimer;
+    QAction *toggleSimAction;   // пункт меню
+
+    float arrowAngle;
+    bool simRunning{false};
+};

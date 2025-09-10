@@ -1,51 +1,99 @@
-#ifndef VECTOR3D_HPP
-#define VECTOR3D_HPP
-#include <cmath>
+#ifndef DUALRADARWIDGET_H
+#define DUALRADARWIDGET_H
 
-class Vector3D {
+#include <QtWidgets>
+#include <QWidget>
+#include <QPainter>
+#include <QTimer>
+#include <QSlider>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QtMath>
+#include "Targets.h"
+
+// Первый виджет: радар с вращающейся стрелкой
+class RadarWidget : public QWidget
+{
+    Q_OBJECT
 public:
-    double x, y, z;
+    explicit RadarWidget(QWidget *parent = nullptr);
+    void setTargets(const std::vector<std::shared_ptr<Target>>& targets);
+    void setArrowAngle(float angleDegrees);
+    void setEnabledScan(bool enabled);
+    void setRadarRange(double range);
+    double getRadarRange() const { return m_radarRange; }
 
-    // Constructors
-    Vector3D() : x(0), y(0), z(0) {}
-    Vector3D(double x, double y, double z) : x(x), y(y), z(z) {}
+protected:
+    void paintEvent(QPaintEvent *event) override;
 
-    // Operations
-    Vector3D operator+(const Vector3D& other) const {
-        return Vector3D(x + other.x, y + other.y, z + other.z);
-    }
+private:
+    std::vector<std::shared_ptr<Target>> m_targets;
+    float m_arrowAngle = 0;
+    bool m_enabled = true;
+    double m_radarRange = 20000; // Дальность в метрах
 
-    Vector3D operator-(const Vector3D& other) const {
-        return Vector3D(x - other.x, y - other.y, z - other.z);
-    }
-
-    Vector3D operator*(double scalar) const {
-        return Vector3D(x * scalar, y * scalar, z * scalar);
-    }
-
-    double dot(const Vector3D& other) const {
-        return x * other.x + y * other.y + z * other.z;
-    }
-
-    Vector3D cross(const Vector3D& other) const {
-        return Vector3D(
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.x
-            );
-    }
-
-    double magnitude() const {
-        return sqrt(x * x + y * y + z * z);
-    }
-
-    Vector3D normalize() const {
-        double mag = magnitude();
-        if (mag > 0) {
-            return Vector3D(x / mag, y / mag, z / mag);
-        }
-        return Vector3D(0, 0, 0);
-    }
+    QPointF worldToScreen(const Vector3D& worldPos, const QPoint& center, int radius) const;
 };
 
-#endif // VECTOR3D_HPP
+// Второй виджет: радар-установка с двумя радиусами
+class RadarInstallationWidget : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit RadarInstallationWidget(QWidget *parent = nullptr);
+    void setCentralAngle(float angleDegrees);
+    void setEnabledScan(bool enabled);
+    void setTargets(const std::vector<std::shared_ptr<Target>>& targets);
+    void setRadarRange(double range);
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
+private:
+    float m_centralAngle = 30;
+    bool m_enabled = true;
+    std::vector<std::shared_ptr<Target>> m_targets;
+    double m_radarRange = 20000;
+
+    QPointF worldToScreen(const Vector3D& worldPos, const QPoint& center, int radius) const;
+};
+
+// Комбинированный виджет с контролами масштаба
+class RadarWithControls : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit RadarWithControls(RadarWidget* radar, QWidget *parent = nullptr);
+    void updateTargets();
+
+private slots:
+    void onRangeChanged(int value);
+
+private:
+    RadarWidget* m_radar;
+    QSlider* m_rangeSlider;
+    QLabel* m_rangeLabel;
+
+    void setupUI();
+};
+
+class RadarInstallationWithControls : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit RadarInstallationWithControls(RadarInstallationWidget* radar, QWidget *parent = nullptr);
+    void updateTargets();
+
+private slots:
+    void onRangeChanged(int value);
+
+private:
+    RadarInstallationWidget* m_radar;
+    QSlider* m_rangeSlider;
+    QLabel* m_rangeLabel;
+
+    void setupUI();
+};
+
+#endif // DUALRADARWIDGET_H

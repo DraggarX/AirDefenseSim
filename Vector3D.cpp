@@ -1,126 +1,51 @@
-#include "mainwindow.h"
-#include <QtWidgets>
-#include <QApplication>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QLabel>
-#include <QCheckBox>
+#include "Vector3D.hpp"
+#include <cmath>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), arrowAngle(0)
-{
-    setupUI();
-    initializeTargets();
+// Default constructor
+Vector3D::Vector3D() : x(0), y(0), z(0) {}
 
-    // Таймер для анимации стрелки радара
-    animationTimer = new QTimer(this);
-    connect(animationTimer, &QTimer::timeout, this, &MainWindow::updateArrow);
-    animationTimer->start(30); // 30ms обновление
+// Parameterized constructor
+Vector3D::Vector3D(double x, double y, double z) : x(x), y(y), z(z) {}
 
-    // Таймер для обновления симуляции движения целей
-    simulationTimer = new QTimer(this);
-    connect(simulationTimer, &QTimer::timeout, this, &MainWindow::updateSimulation);
-    simulationTimer->start(100); // 100ms обновление симуляции
+// Vector addition
+Vector3D Vector3D::operator+(const Vector3D& other) const {
+    return Vector3D(x + other.x, y + other.y, z + other.z);
 }
 
-void MainWindow::setupUI()
-{
-    QWidget *central = new QWidget(this);
-    QHBoxLayout *mainLayout = new QHBoxLayout(central);
-
-    // Левый радар с контролами
-    QVBoxLayout *leftLayout = new QVBoxLayout();
-    leftRadar = new RadarWidget(this);
-    leftRadarControls = new RadarWithControls(leftRadar, this);
-
-    QLabel *leftLabel = new QLabel("Круговой радар", this);
-    leftLabel->setAlignment(Qt::AlignCenter);
-    leftLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
-
-    QCheckBox *leftToggle = new QCheckBox("Включить сканирование", this);
-    leftToggle->setChecked(true);
-
-    leftLayout->addWidget(leftLabel);
-    leftLayout->addWidget(leftRadarControls);
-    leftLayout->addWidget(leftToggle, 0, Qt::AlignCenter);
-
-    // Правый радар с контролами
-    QVBoxLayout *rightLayout = new QVBoxLayout();
-    rightRadar = new RadarInstallationWidget(this);
-    rightRadar->setCentralAngle(30); // угол сектора 30 градусов
-    rightRadarControls = new RadarInstallationWithControls(rightRadar, this);
-
-    QLabel *rightLabel = new QLabel("Секторный радар", this);
-    rightLabel->setAlignment(Qt::AlignCenter);
-    rightLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
-
-    QCheckBox *rightToggle = new QCheckBox("Включить сканирование", this);
-    rightToggle->setChecked(true);
-
-    rightLayout->addWidget(rightLabel);
-    rightLayout->addWidget(rightRadarControls);
-    rightLayout->addWidget(rightToggle, 0, Qt::AlignCenter);
-
-    // Добавляем разделитель
-    QFrame *separator = new QFrame();
-    separator->setFrameShape(QFrame::VLine);
-    separator->setFrameShadow(QFrame::Sunken);
-
-    mainLayout->addLayout(leftLayout, 1);
-    mainLayout->addWidget(separator);
-    mainLayout->addLayout(rightLayout, 1);
-
-    setCentralWidget(central);
-
-    // Подключаем сигналы
-    connect(leftToggle, &QCheckBox::toggled, this, &MainWindow::onLeftRadarToggle);
-    connect(rightToggle, &QCheckBox::toggled, this, &MainWindow::onRightRadarToggle);
-
-    // Устанавливаем заголовок и размер окна
-    setWindowTitle("Система ПВО - Симулятор радаров");
-    resize(1000, 600);
-
-    // Стиль окна
-    setStyleSheet("QMainWindow { background-color: #2b2b2b; }"
-                  "QLabel { color: white; }"
-                  "QCheckBox { color: white; }");
+// Vector subtraction
+Vector3D Vector3D::operator-(const Vector3D& other) const {
+    return Vector3D(x - other.x, y - other.y, z - other.z);
 }
 
-void MainWindow::initializeTargets()
-{
-    // Получаем менеджер целей и создаем два F-16
-    TargetManager& manager = TargetManager::getInstance();
-    manager.createDefaultF16Targets();
-
-    // Обновляем отображение целей на радарах
-    leftRadarControls->updateTargets();
-    rightRadarControls->updateTargets();
+// Scalar multiplication
+Vector3D Vector3D::operator*(double scalar) const {
+    return Vector3D(x * scalar, y * scalar, z * scalar);
 }
 
-void MainWindow::updateArrow()
-{
-    arrowAngle += 2.5f;
-    if (arrowAngle > 360) arrowAngle -= 360;
-    leftRadar->setArrowAngle(arrowAngle);
+// Dot product
+double Vector3D::dot(const Vector3D& other) const {
+    return x * other.x + y * other.y + z * other.z;
 }
 
-void MainWindow::updateSimulation()
-{
-    // Обновляем позиции целей
-    TargetManager& manager = TargetManager::getInstance();
-    manager.updateTargets(0.1); // dt = 0.1 секунды
-
-    // Обновляем отображение на радарах
-    leftRadarControls->updateTargets();
-    rightRadarControls->updateTargets();
+// Cross product
+Vector3D Vector3D::cross(const Vector3D& other) const {
+    return Vector3D(
+        y * other.z - z * other.y,
+        z * other.x - x * other.z,
+        x * other.y - y * other.x
+        );
 }
 
-void MainWindow::onLeftRadarToggle(bool checked)
-{
-    leftRadar->setEnabledScan(checked);
+// Magnitude of the vector
+double Vector3D::magnitude() const {
+    return std::sqrt(x * x + y * y + z * z);
 }
 
-void MainWindow::onRightRadarToggle(bool checked)
-{
-    rightRadar->setEnabledScan(checked);
+// Normalize the vector
+Vector3D Vector3D::normalize() const {
+    double mag = magnitude();
+    if (mag > 0) {
+        return Vector3D(x / mag, y / mag, z / mag);
+    }
+    return Vector3D(0, 0, 0);
 }

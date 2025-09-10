@@ -1,98 +1,80 @@
 #include "mainwindow.h"
-#include <QtWidgets>
 #include <QApplication>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QLabel>
-#include <QCheckBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), arrowAngle(0)
 {
     setupUI();
+    setupMenu();             // создаём меню
     initializeTargets();
 
-    // Таймер для анимации стрелки радара
     animationTimer = new QTimer(this);
     connect(animationTimer, &QTimer::timeout, this, &MainWindow::updateArrow);
-    animationTimer->start(30); // 30ms обновление
+    animationTimer->start(30);
 
-    // Таймер для обновления симуляции движения целей
     simulationTimer = new QTimer(this);
     connect(simulationTimer, &QTimer::timeout, this, &MainWindow::updateSimulation);
-    simulationTimer->start(100); // 100ms обновление симуляции
+    // не запускаем сразу, ждём команды из меню
+}
+
+void MainWindow::setupMenu()
+{
+    QMenu *simMenu = menuBar()->addMenu(tr("Simulation"));
+    toggleSimAction = simMenu->addAction(tr("Start Simulation"));
+    toggleSimAction->setCheckable(true);
+    connect(toggleSimAction, &QAction::triggered, this, &MainWindow::onToggleSimulation);
+}
+
+void MainWindow::onToggleSimulation()
+{
+    simRunning = !simRunning;
+    if (simRunning) {
+        simulationTimer->start(100);
+        toggleSimAction->setText(tr("Stop Simulation"));
+    } else {
+        simulationTimer->stop();
+        toggleSimAction->setText(tr("Start Simulation"));
+    }
 }
 
 void MainWindow::setupUI()
 {
+    // Центральный виджет и радары — без изменений
     QWidget *central = new QWidget(this);
     QHBoxLayout *mainLayout = new QHBoxLayout(central);
 
-    // Левый радар с контролами
+    // Левый радар
     QVBoxLayout *leftLayout = new QVBoxLayout();
     leftRadar = new RadarWidget(this);
     leftRadarControls = new RadarWithControls(leftRadar, this);
-
-    QLabel *leftLabel = new QLabel("Круговой радар", this);
-    leftLabel->setAlignment(Qt::AlignCenter);
-    leftLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
-
-    QCheckBox *leftToggle = new QCheckBox("Включить сканирование", this);
+    QCheckBox *leftToggle = new QCheckBox(tr("Enable Scan"), this);
     leftToggle->setChecked(true);
-
-    leftLayout->addWidget(leftLabel);
+    leftLayout->addWidget(new QLabel(tr("Circular Radar"), this), 0, Qt::AlignCenter);
     leftLayout->addWidget(leftRadarControls);
     leftLayout->addWidget(leftToggle, 0, Qt::AlignCenter);
 
-    // Правый радар с контролами
+    // Правый радар
     QVBoxLayout *rightLayout = new QVBoxLayout();
     rightRadar = new RadarInstallationWidget(this);
-    rightRadar->setCentralAngle(30); // угол сектора 30 градусов
     rightRadarControls = new RadarInstallationWithControls(rightRadar, this);
-
-    QLabel *rightLabel = new QLabel("Секторный радар", this);
-    rightLabel->setAlignment(Qt::AlignCenter);
-    rightLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
-
-    QCheckBox *rightToggle = new QCheckBox("Включить сканирование", this);
+    QCheckBox *rightToggle = new QCheckBox(tr("Enable Scan"), this);
     rightToggle->setChecked(true);
-
-    rightLayout->addWidget(rightLabel);
+    rightLayout->addWidget(new QLabel(tr("Sector Radar"), this), 0, Qt::AlignCenter);
     rightLayout->addWidget(rightRadarControls);
     rightLayout->addWidget(rightToggle, 0, Qt::AlignCenter);
 
-    // Добавляем разделитель
-    QFrame *separator = new QFrame();
-    separator->setFrameShape(QFrame::VLine);
-    separator->setFrameShadow(QFrame::Sunken);
-
     mainLayout->addLayout(leftLayout, 1);
-    mainLayout->addWidget(separator);
     mainLayout->addLayout(rightLayout, 1);
-
     setCentralWidget(central);
 
-    // Подключаем сигналы
     connect(leftToggle, &QCheckBox::toggled, this, &MainWindow::onLeftRadarToggle);
     connect(rightToggle, &QCheckBox::toggled, this, &MainWindow::onRightRadarToggle);
-
-    // Устанавливаем заголовок и размер окна
-    setWindowTitle("Система ПВО - Симулятор радаров");
-    resize(1000, 600);
-
-    // Стиль окна
-    setStyleSheet("QMainWindow { background-color: #2b2b2b; }"
-                  "QLabel { color: white; }"
-                  "QCheckBox { color: white; }");
 }
 
 void MainWindow::initializeTargets()
 {
-    // Получаем менеджер целей и создаем два F-16
-    TargetManager& manager = TargetManager::getInstance();
-    manager.createDefaultF16Targets();
-
-    // Обновляем отображение целей на радарах
+    auto &mgr = TargetManager::getInstance();
+    mgr.createDefaultF16Targets();
     leftRadarControls->updateTargets();
     rightRadarControls->updateTargets();
 }
@@ -106,11 +88,8 @@ void MainWindow::updateArrow()
 
 void MainWindow::updateSimulation()
 {
-    // Обновляем позиции целей
-    TargetManager& manager = TargetManager::getInstance();
-    manager.updateTargets(0.1); // dt = 0.1 секунды
-
-    // Обновляем отображение на радарах
+    auto &mgr = TargetManager::getInstance();
+    mgr.updateTargets(0.1);
     leftRadarControls->updateTargets();
     rightRadarControls->updateTargets();
 }

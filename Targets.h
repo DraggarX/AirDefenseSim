@@ -1,5 +1,6 @@
 #ifndef TARGETS_H
 #define TARGETS_H
+
 #pragma once
 #include "Vector3D.hpp"
 #include <string>
@@ -24,22 +25,17 @@ public:
         position = position + velocity * dt;
     }
 
-    // Получить координаты для отображения на радаре (в метрах)
-    Vector3D getRadarCoordinates() const {
-        return position;
-    }
-
 protected:
     std::string name;
-    Vector3D position;  // Позиция в метрах
-    Vector3D velocity;  // Скорость в м/с
+    Vector3D position;
+    Vector3D velocity;
 };
 
-// Пример наследника – истребитель F-16
+// F-16 Fighter
 class F16Fighter : public Target {
 public:
     F16Fighter(const std::string& _name, const Vector3D& _pos, const Vector3D& _vel)
-        : Target(_name, _pos, _vel), rcs(5.0) {} // ЭПР ~5 м²
+        : Target(_name, _pos, _vel), rcs(5.0) {}
 
     double getRCS() const { return rcs; }
 
@@ -70,7 +66,8 @@ public:
     }
 
     void createDefaultF16Targets() {
-        // Создаем два F-16 с разными позициями и скоростями
+        targets.clear(); // Очищаем предыдущие цели
+
         auto f16_1 = std::make_shared<F16Fighter>(
             "F-16A-001",
             Vector3D(15000, 8000, 3000),    // 15км по X, 8км по Y, 3км высота

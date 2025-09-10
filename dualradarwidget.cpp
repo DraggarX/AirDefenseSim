@@ -36,10 +36,9 @@ void RadarWidget::setRadarRange(double range)
 
 QPointF RadarWidget::worldToScreen(const Vector3D& worldPos, const QPoint& center, int radius) const
 {
-    // Преобразуем мировые координаты (в метрах) в экранные
     double scale = radius / m_radarRange;
     double screenX = center.x() + worldPos.x * scale;
-    double screenY = center.y() - worldPos.y * scale; // Y инвертирован
+    double screenY = center.y() - worldPos.y * scale;
     return QPointF(screenX, screenY);
 }
 
@@ -55,12 +54,10 @@ void RadarWidget::paintEvent(QPaintEvent *)
     painter.setPen(QPen(Qt::green, 2));
     painter.drawEllipse(center, radius, radius);
 
-    // Концентрические окружности
     for (int r = radius/4; r < radius; r += radius/4) {
         painter.drawEllipse(center, r, r);
     }
 
-    // Координатные оси
     painter.drawLine(center.x(), center.y() - radius, center.x(), center.y() + radius);
     painter.drawLine(center.x() - radius, center.y(), center.x() + radius, center.y());
 
@@ -69,12 +66,12 @@ void RadarWidget::paintEvent(QPaintEvent *)
     painter.setFont(QFont("Arial", 8));
     for (int i = 1; i <= 4; i++) {
         int r = (radius * i) / 4;
-        double range_km = (m_radarRange * i) / 4000; // в км
+        double range_km = (m_radarRange * i) / 4000;
         QString label = QString::number(range_km, 'f', 1) + "км";
         painter.drawText(center.x() + r + 5, center.y() - 5, label);
     }
 
-    // Вращающаяся стрелка (желтая)
+    // Вращающаяся стрелка
     if (m_enabled) {
         painter.setPen(QPen(Qt::yellow, 4));
         float rad = qDegreesToRadians(m_arrowAngle);
@@ -89,17 +86,14 @@ void RadarWidget::paintEvent(QPaintEvent *)
         Vector3D pos = target->getPosition();
         double distance = sqrt(pos.x * pos.x + pos.y * pos.y);
 
-        // Показываем только цели в пределах дальности радара
         if (distance <= m_radarRange) {
             QPointF screenPos = worldToScreen(pos, center, radius);
 
-            // Проверяем, что цель в пределах экрана
             if (screenPos.x() >= 0 && screenPos.x() <= width() &&
                 screenPos.y() >= 0 && screenPos.y() <= height()) {
 
                 painter.drawEllipse(screenPos, 8, 8);
 
-                // Отображаем координаты цели
                 painter.setPen(Qt::white);
                 painter.setFont(QFont("Arial", 9));
                 QString coords = QString("(%1,%2,%3)")
@@ -108,7 +102,6 @@ void RadarWidget::paintEvent(QPaintEvent *)
                                      .arg(pos.z, 0, 'f', 0);
                 painter.drawText(screenPos.x() + 10, screenPos.y() - 5, coords);
 
-                // Имя цели
                 painter.setPen(Qt::cyan);
                 painter.drawText(screenPos.x() + 10, screenPos.y() + 10,
                                  QString::fromStdString(target->getName()));
@@ -120,7 +113,7 @@ void RadarWidget::paintEvent(QPaintEvent *)
     }
 }
 
-/* ---------- RadarInstallationWidget (два радиуса с фиксированным углом) ---------- */
+/* ---------- RadarInstallationWidget ---------- */
 RadarInstallationWidget::RadarInstallationWidget(QWidget *parent)
     : QWidget(parent), m_centralAngle(30), m_enabled(true), m_radarRange(20000)
 {
@@ -167,7 +160,6 @@ void RadarInstallationWidget::paintEvent(QPaintEvent *)
     int radius = qMin(width(), height()) / 2 - 20;
     QPoint center(width() / 2, height() / 2);
 
-    // Рисуем сетку радара
     painter.setPen(QPen(Qt::cyan, 2));
     painter.drawEllipse(center, radius, radius);
 
@@ -187,7 +179,7 @@ void RadarInstallationWidget::paintEvent(QPaintEvent *)
 
     // Два радиуса с фиксированным углом
     if (m_enabled) {
-        float baseAngle = 90; // вертикально вверх
+        float baseAngle = 90;
         float half = m_centralAngle / 2;
 
         float rad1 = qDegreesToRadians(baseAngle - half);
@@ -246,17 +238,15 @@ void RadarWithControls::setupUI()
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
 
-    // Добавляем сам радар
     layout->addWidget(m_radar);
 
-    // Контролы масштаба
     QHBoxLayout* controlsLayout = new QHBoxLayout();
 
     QLabel* rangeTitle = new QLabel("Дальность радара:");
     m_rangeSlider = new QSlider(Qt::Horizontal);
-    m_rangeSlider->setMinimum(5000);   // 5 км
-    m_rangeSlider->setMaximum(50000);  // 50 км
-    m_rangeSlider->setValue(20000);    // 20 км по умолчанию
+    m_rangeSlider->setMinimum(5000);
+    m_rangeSlider->setMaximum(50000);
+    m_rangeSlider->setValue(20000);
 
     m_rangeLabel = new QLabel("20.0 км");
 
