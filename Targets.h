@@ -3,6 +3,8 @@
 #pragma once
 #include "Vector3D.hpp"
 #include <string>
+#include <vector>
+#include <memory>
 
 // Базовый класс цели
 class Target {
@@ -17,32 +19,77 @@ public:
     Vector3D getPosition() const { return position; }
     Vector3D getVelocity() const { return velocity; }
 
-    // Виртуальный метод движения (на будущее)
+    // Виртуальный метод движения
     virtual void update(double dt) {
         position = position + velocity * dt;
     }
 
+    // Получить координаты для отображения на радаре (в метрах)
+    Vector3D getRadarCoordinates() const {
+        return position;
+    }
+
 protected:
     std::string name;
-    Vector3D position;
-    Vector3D velocity;
-    // Можно добавить ЭПР, тип самолета, вооружение и т.д.
+    Vector3D position;  // Позиция в метрах
+    Vector3D velocity;  // Скорость в м/с
 };
 
-// Пример наследника – истребитель
-class Fighter : public Target {
+// Пример наследника – истребитель F-16
+class F16Fighter : public Target {
 public:
-    Fighter(const std::string& _name, const Vector3D& _pos, const Vector3D& _vel)
-        : Target(_name, _pos, _vel) {}
-    // Могут быть дополнительные параметры/методы
+    F16Fighter(const std::string& _name, const Vector3D& _pos, const Vector3D& _vel)
+        : Target(_name, _pos, _vel), rcs(5.0) {} // ЭПР ~5 м²
+
+    double getRCS() const { return rcs; }
+
+private:
+    double rcs; // Радиолокационная отражающая поверхность
 };
 
-// Пример наследника – бомбардировщик
-class Bomber : public Target {
+// Менеджер целей
+class TargetManager {
 public:
-    Bomber(const std::string& _name, const Vector3D& _pos, const Vector3D& _vel)
-        : Target(_name, _pos, _vel) {}
-    // Могут быть дополнительные параметры/методы
+    static TargetManager& getInstance() {
+        static TargetManager instance;
+        return instance;
+    }
+
+    void addTarget(std::shared_ptr<Target> target) {
+        targets.push_back(target);
+    }
+
+    const std::vector<std::shared_ptr<Target>>& getTargets() const {
+        return targets;
+    }
+
+    void updateTargets(double dt) {
+        for (auto& target : targets) {
+            target->update(dt);
+        }
+    }
+
+    void createDefaultF16Targets() {
+        // Создаем два F-16 с разными позициями и скоростями
+        auto f16_1 = std::make_shared<F16Fighter>(
+            "F-16A-001",
+            Vector3D(15000, 8000, 3000),    // 15км по X, 8км по Y, 3км высота
+            Vector3D(-200, -50, 0)          // Движется со скоростью ~200 м/с
+            );
+
+        auto f16_2 = std::make_shared<F16Fighter>(
+            "F-16A-002",
+            Vector3D(12000, -5000, 2500),   // 12км по X, -5км по Y, 2.5км высота
+            Vector3D(-180, 30, 10)          // Движется со скоростью ~180 м/с
+            );
+
+        addTarget(f16_1);
+        addTarget(f16_2);
+    }
+
+private:
+    std::vector<std::shared_ptr<Target>> targets;
+    TargetManager() = default;
 };
 
 #endif // TARGETS_H

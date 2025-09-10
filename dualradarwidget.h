@@ -1,44 +1,51 @@
-#ifndef DUALRADARWIDGET_H
-#define DUALRADARWIDGET_H
+#ifndef VECTOR3D_HPP
+#define VECTOR3D_HPP
+#include <cmath>
 
-#include <QWidget>
-#include <QVector>
-#include <QPointF>
-
-// Первый виджет: радар с вращающейся стрелкой
-class RadarWidget : public QWidget
-{
-    Q_OBJECT
+class Vector3D {
 public:
-    explicit RadarWidget(QWidget *parent = nullptr);
-    void setTargets(const QVector<QPointF>& targets);
-    void setArrowAngle(float angleDegrees);
-    void setEnabledScan(bool enabled);
+    double x, y, z;
 
-protected:
-    void paintEvent(QPaintEvent *event) override;
+    // Constructors
+    Vector3D() : x(0), y(0), z(0) {}
+    Vector3D(double x, double y, double z) : x(x), y(y), z(z) {}
 
-private:
-    QVector<QPointF> m_targets;
-    float m_arrowAngle = 0;
-    bool m_enabled = true;
+    // Operations
+    Vector3D operator+(const Vector3D& other) const {
+        return Vector3D(x + other.x, y + other.y, z + other.z);
+    }
+
+    Vector3D operator-(const Vector3D& other) const {
+        return Vector3D(x - other.x, y - other.y, z - other.z);
+    }
+
+    Vector3D operator*(double scalar) const {
+        return Vector3D(x * scalar, y * scalar, z * scalar);
+    }
+
+    double dot(const Vector3D& other) const {
+        return x * other.x + y * other.y + z * other.z;
+    }
+
+    Vector3D cross(const Vector3D& other) const {
+        return Vector3D(
+            y * other.z - z * other.y,
+            z * other.x - x * other.z,
+            x * other.y - y * other.x
+            );
+    }
+
+    double magnitude() const {
+        return sqrt(x * x + y * y + z * z);
+    }
+
+    Vector3D normalize() const {
+        double mag = magnitude();
+        if (mag > 0) {
+            return Vector3D(x / mag, y / mag, z / mag);
+        }
+        return Vector3D(0, 0, 0);
+    }
 };
 
-// Второй виджет: радар-установка с двумя радиусами
-class RadarInstallationWidget : public QWidget
-{
-    Q_OBJECT
-public:
-    explicit RadarInstallationWidget(QWidget *parent = nullptr);
-    void setCentralAngle(float angleDegrees);
-    void setEnabledScan(bool enabled);
-
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
-private:
-    float m_centralAngle = 30; // угол между радиусами (фиксируется через setCentralAngle)
-    bool m_enabled = true;
-};
-
-#endif // DUALRADARWIDGET_H
+#endif // VECTOR3D_HPP
